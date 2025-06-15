@@ -1,0 +1,6 @@
+server:
+  port: 8080  # 服务端口
+
+spring:
+  cache:
+    type: concurrent  # 启用内存缓存（与 CachingConfig 配合）
