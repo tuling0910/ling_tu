@@ -50,7 +50,7 @@ public class TransactionServiceTest {
 
         // 修改交易
         created.setAmount(new BigDecimal("200.00"));
-        Transaction updated = transactionService.updateTransaction(created.getId(), created);
+        Transaction updated = transactionService.updateTransaction(created);
         assertEquals(new BigDecimal("200.00"), updated.getAmount());
     }
 

@@ -9,10 +9,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -41,13 +40,15 @@ public class TransactionService {
 
     // 更新交易
     @CacheEvict(value = "transactions", allEntries = true)
-    public Transaction updateTransaction(String id, Transaction updatedTransaction) {
-        if (!transactionStore.containsKey(id)) {
+    public Transaction updateTransaction(Transaction updatedTransaction) {
+        if (!transactionStore.containsKey(updatedTransaction.getId())) {
             throw new IllegalArgumentException("Transaction not found");
         }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        updatedTransaction.setTimestamp(now.format(formatter));
         validateParam(updatedTransaction);
-        updatedTransaction.setId(id);
-        transactionStore.put(id, updatedTransaction);
+        transactionStore.put(updatedTransaction.getId(), updatedTransaction);
         return updatedTransaction;
     }
 
@@ -63,20 +64,12 @@ public class TransactionService {
                 .sorted(Comparator.comparing(Transaction::getTimestamp).reversed())
                 .collect(Collectors.toList());
 
-        int totalElements = sortedTransactions.size();
-        int totalPages = (int) Math.ceil((double) totalElements / size);
+        // 手动实现分页（实际项目建议用JPA或MyBatis）
+        int start = Math.min((int) (page * size), sortedTransactions.size());
+        int end = Math.min(start + size, sortedTransactions.size());
 
-        page = Math.max(1, page);
-        page = Math.min(page, totalPages);
-
-        int startIndex = (page - 1) * size;
-        int endIndex = Math.min(startIndex + size, totalElements);
-
-        List<Transaction> content = (Math.abs(startIndex) >= endIndex)
-                ? Collections.emptyList()
-                : sortedTransactions.subList(startIndex, endIndex);
-
-        return new PageResponse<>(content, page, size, totalElements, totalPages);
+        List<Transaction> pageContent = sortedTransactions.subList(start, end);
+        return new PageResponse<>(pageContent, page, size, sortedTransactions.size(), (sortedTransactions.size() + size - 1) / size);
     }
 
     // 参数校验
@@ -93,5 +86,10 @@ public class TransactionService {
         if(StringUtils.isEmpty(transaction.getType())){
             throw new IllegalArgumentException("type is null");
         }
+    }
+
+
+    public List<Transaction> listAllTransactions() {
+        return new ArrayList<>(transactionStore.values());
     }
 }
