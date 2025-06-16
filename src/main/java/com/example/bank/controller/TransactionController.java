@@ -51,7 +51,7 @@ public class TransactionController {
         }
     }
 
-
+    // 根据id获取交易
     @GetMapping("/{id}")
     public ResponseEntity<Transaction> listTransactionById(@PathVariable String id) {
         Transaction transactions = transactionService.listTransactionById(id);
